@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Monitoreo de Salud Remoto</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Font Awesome para iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js para gráficas -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- jsPDF para generación de PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <img src="logo-upc.png" alt="Logo Universidad Popular del Cesar">
+            </div>
+            <h1>Sistema de Monitoreo de Salud Remoto</h1>
+            <p class="subtitle">Prototipo IoT para comunidades rurales del Cesar</p>
+        </header>
+
+        <div class="connection-status">
+            <div id="connection-indicator" class="connected">
+                <i class="fas fa-wifi"></i>
+                <span id="connection-text">Conectado</span>
+            </div>
+            <div class="sampling-rate">
+                <label for="sampling-rate">Frecuencia de muestreo:</label>
+                <select id="sampling-rate">
+                    <option value="1000">1 segundo</option>
+                    <option value="3000" selected>3 segundos</option>
+                    <option value="5000">5 segundos</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="dashboard">
+            <div class="sensor-card" id="heart-rate-card">
+                <div class="card-header">
+                    <h2>Frecuencia Cardíaca</h2>
+                    <p class="sensor-name">Sensor MAX30102</p>
+                </div>
+                <div class="card-body">
+                    <div class="reading">
+                        <span id="heart-rate-value">--</span>
+                        <span class="unit">bpm</span>
+                    </div>
+                    <div class="canvas-container">
+                        <canvas id="heart-rate-chart"></canvas>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="limits">
+                        <label for="min-heart-rate">Mín:</label>
+                        <input type="number" id="min-heart-rate" value="60" min="40" max="100">
+                        <label for="max-heart-rate">Máx:</label>
+                        <input type="number" id="max-heart-rate" value="100" min="80" max="200">
+                    </div>
+                </div>
+            </div>
+
+            <div class="sensor-card" id="oxygen-card">
+                <div class="card-header">
+                    <h2>Saturación de Oxígeno</h2>
+                    <p class="sensor-name">Sensor MAX30102</p>
+                </div>
+                <div class="card-body">
+                    <div class="reading">
+                        <span id="oxygen-value">--</span>
+                        <span class="unit">%</span>
+                    </div>
+                    <div class="canvas-container">
+                        <canvas id="oxygen-chart"></canvas>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="limits">
+                        <label for="min-oxygen">Mín:</label>
+                        <input type="number" id="min-oxygen" value="93" min="80" max="100">
+                        <label for="max-oxygen">Máx:</label>
+                        <input type="number" id="max-oxygen" value="100" min="90" max="100">
+                    </div>
+                </div>
+            </div>
+
+            <div class="sensor-card" id="temperature-card">
+                <div class="card-header">
+                    <h2>Temperatura Corporal</h2>
+                    <p class="sensor-name">Sensor DHT11/MLX90614</p>
+                </div>
+                <div class="card-body">
+                    <div class="reading">
+                        <span id="temperature-value">--</span>
+                        <span class="unit">°C</span>
+                    </div>
+                    <div class="canvas-container">
+                        <canvas id="temperature-chart"></canvas>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="limits">
+                        <label for="min-temperature">Mín:</label>
+                        <input type="number" id="min-temperature" value="36.0" min="35.0" max="37.0" step="0.1">
+                        <label for="max-temperature">Máx:</label>
+                        <input type="number" id="max-temperature" value="38.0" min="37.0" max="42.0" step="0.1">
+                    </div>
+                </div>
+            </div>
+
+            <div class="sensor-card" id="movement-card">
+                <div class="card-header">
+                    <h2>Detección de Movimiento</h2>
+                    <p class="sensor-name">Acelerómetro MPU6050</p>
+                </div>
+                <div class="card-body movement-body">
+                    <div class="movement-status">
+                        <div id="movement-indicator">
+                            <i class="fas fa-walking"></i>
+                        </div>
+                        <span id="movement-text">Normal</span>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="movement-sensitivity">
+                        <label for="movement-sensitivity">Sensibilidad:</label>
+                        <select id="movement-sensitivity">
+                            <option value="low">Baja</option>
+                            <option value="medium" selected>Media</option>
+                            <option value="high">Alta</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="alerts-container">
+            <div id="alerts-panel" class="hidden">
+                <h3><i class="fas fa-exclamation-triangle"></i> Alertas</h3>
+                <ul id="alerts-list"></ul>
+            </div>
+        </div>
+
+        <div class="actions">
+            <button id="generate-pdf" class="btn primary">
+                <i class="fas fa-file-pdf"></i> Generar Reporte PDF
+            </button>
+            <button id="toggle-connection" class="btn secondary">
+                <i class="fas fa-plug"></i> Simular Desconexión
+            </button>
+            <button id="reset-simulation" class="btn secondary">
+                <i class="fas fa-sync"></i> Reiniciar Simulación
+            </button>
+        </div>
+
+        <footer>
+            <p>Desarrollado como parte del proyecto: "Desarrollo de un Sistema de Monitoreo de Salud Remoto para Zonas Rurales del Cesar utilizando IoT, Arduino y Sensores Biométricos"</p>
+            <p>Jose Jorge Silva Niebles | Marco Andrés Martínez Malagón</p>
+            <p>Universidad Popular del Cesar - Seccional Aguachica - © 2025</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
